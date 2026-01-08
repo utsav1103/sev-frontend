@@ -1,20 +1,27 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
-import { loginSchema, type LoginInput } from '@/schemas/auth'
+import { loginSchema, type LoginInput } from '@/types/schemas/authSchema'
 import { api } from '@/lib/axios'
 import { useState } from 'react'
 import { LoadingOverlay, TextInput, rem, PasswordInput, Button } from '@mantine/core'
 import { handleError } from '@/services/errorService'
+import type { UserDTO } from '@/types/schemas/userSchema'
 
 
 export const Route = createFileRoute('/auth/login')({
   component: LoginPage,
+  beforeLoad: async () => {
+    const token = await cookieStore.get("accessToken");
+    if (token)
+      redirect({
+        to: '/'
+      });
+  }
 })
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [serverMessage, setServerMessage] = useState<string | null>(null)
 
   // --------------------
   // Login mutation
@@ -24,12 +31,10 @@ function LoginPage() {
       const res = await api.post('/auth/login', values)
       return res.data
     },
-    onSuccess: (data) => {
-      if (data?.needsVerification) {
-        setServerMessage(
-          'Please verify your email. We’ve sent you a verification link.'
-        )
-        return
+    onSuccess: (user: UserDTO) => {
+      if (!(user?.isEmailVerified)) {
+        console.log("email not verified. please verify first");
+        return;
       }
 
       navigate({ to: '/' })
@@ -48,7 +53,7 @@ function LoginPage() {
       return res.data
     },
     onSuccess: () => navigate({ to: '/' }),
-    onError: () => setServerMessage('Google login failed'),
+    onError: (err : unknown) => handleError(err,'Google login failed'),
   })
 
   // --------------------
@@ -63,7 +68,6 @@ function LoginPage() {
       onChange: loginSchema,
     },
     onSubmit: async ({ value }) => {
-      setServerMessage(null)
       mutate(value)
     },
   })
@@ -71,12 +75,12 @@ function LoginPage() {
   return (
     <div className="mx-auto mt-12 max-w-md rounded-2xl bg-white p-6 shadow">
       <h1 className="mb-6 text-center text-2xl font-semibold">Login</h1>
-
+      {/* 
       {serverMessage && (
         <div className="mb-4 rounded bg-yellow-50 p-3 text-sm text-yellow-800">
           {serverMessage}
         </div>
-      )}
+      )} */}
 
       {/* ---------------- Email ---------------- */}
       <form onSubmit={(e) => {
