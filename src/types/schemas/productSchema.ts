@@ -18,7 +18,7 @@ export const productBaseSchema = z.object({
     weight: z.array(
         z.object({
             value: z.number().positive(),
-            unit: z.enum(['g', 'kg']),
+            unit: z.enum(['gm', 'kg']),
         })
     ).min(1),
 
@@ -54,7 +54,7 @@ export const productSchema = productBaseSchema.transform((data) => ({
 }))
 
 export const productResponseSchema = productBaseSchema.extend({
-    _id: z.string(),
+    id: z.string(),
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
 })
