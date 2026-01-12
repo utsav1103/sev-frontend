@@ -17,14 +17,9 @@ export const userSchema = z.object({
         })
         .optional(),
     isPhoneVerified: z.boolean(),
-    role: z.enum(["user", "admin"]), // adjust roles as per your app
     avatar: z.string().url().optional(),
     addresses: z.array(z.string()).optional(), // or a more detailed address schema
     wishlist: z.array(z.string()).optional(),
-    authProvider: z.enum(["local", "google"]).optional(),
-    isActive: z.boolean().optional(),
-    createdAt: z.date(),
-    updatedAt: z.date(),
 });
 
 // Type inference

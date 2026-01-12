@@ -1,12 +1,11 @@
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from '@tanstack/react-form'
-import { loginSchema, type LoginInput } from '@/types/schemas/authSchema'
-import { api } from '@/lib/axios'
-import { useState } from 'react'
+import { loginSchema } from '@/types/schemas/authSchema'
 import { LoadingOverlay, TextInput, rem, PasswordInput, Button } from '@mantine/core'
 import { handleError } from '@/services/errorService'
-import type { UserDTO } from '@/types/schemas/userSchema'
+import GoogleLogin from '@/components/GoogleLogin'
+import { login } from '@/services/authService'
 
 
 export const Route = createFileRoute('/auth/login')({
@@ -27,11 +26,8 @@ function LoginPage() {
   // Login mutation
   // --------------------
   const { mutate, isPending } = useMutation({
-    mutationFn: async (values: LoginInput) => {
-      const res = await api.post('/auth/login', values)
-      return res.data
-    },
-    onSuccess: (user: UserDTO) => {
+    mutationFn: () => login(form.state.values),
+    onSuccess: (user) => {
       if (!(user?.isEmailVerified)) {
         console.log("email not verified. please verify first");
         return;
@@ -39,21 +35,9 @@ function LoginPage() {
 
       navigate({ to: '/' })
     },
-    onError: (err: unknown) => {
+    onError: (err) => {
       handleError(err, "Login Failed");
     },
-  })
-
-  // --------------------
-  // Google login mutation
-  // --------------------
-  const googleMutation = useMutation({
-    mutationFn: async () => {
-      const res = await api.post('/auth/google')
-      return res.data
-    },
-    onSuccess: () => navigate({ to: '/' }),
-    onError: (err : unknown) => handleError(err,'Google login failed'),
   })
 
   // --------------------
@@ -67,9 +51,7 @@ function LoginPage() {
     validators: {
       onChange: loginSchema,
     },
-    onSubmit: async ({ value }) => {
-      mutate(value)
-    },
+    onSubmit: () => mutate(),
   })
 
   return (
@@ -127,21 +109,7 @@ function LoginPage() {
         </button>
       </form>
 
-      {/* ---------------- Divider ---------------- */}
-      <div className="my-6 flex items-center gap-2">
-        <div className="h-px flex-1 bg-gray-200" />
-        <span className="text-xs text-gray-500">OR</span>
-        <div className="h-px flex-1 bg-gray-200" />
-      </div>
-
-      {/* ---------------- Google Login ---------------- */}
-      <button
-        onClick={() => googleMutation.mutate()}
-        disabled={googleMutation.isPending}
-        className="flex w-full items-center justify-center gap-2 rounded border py-2 disabled:opacity-50"
-      >
-        {googleMutation.isPending ? 'Connecting...' : 'Continue with Google'}
-      </button>
+      <GoogleLogin/>
     </div>
   )
 }
